@@ -1,0 +1,121 @@
+body{
+	padding:0;
+	margin:0;
+	background-color: #eee;
+}
+#body{/*Not to be confused with the body element*/
+	display: block;
+
+}
+#post{
+	display: none;
+	position: fixed;
+	top:0;
+	left:0;
+	width: 100vw;
+	height: 100vh;
+	padding: 7%;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	z-index: 100;
+}
+#events{
+	margin:0;
+	padding: 2%;
+}
+
+
+
+
+
+header{
+	background-color: black;
+	color: white;
+}
+nav{
+	background-color: orange;
+}
+
+footer{
+	height: 300px;
+	background-color: gray;
+}
+
+.events-list-item{
+	background-color: white;
+	margin-bottom: 1%;
+	padding: 1%;
+}
+
+.events-list-item img{
+	display: block;
+	margin: 0 auto;
+	width: 100%;
+	max-width: 400px;
+	height: 200px;
+}
+
+#sidebar{
+	height: 700px;
+}
+.sidebar-list-item{
+	background-color: white;
+	width: 100%;
+	margin-bottom: 1%;
+	font-size: 1.4em;
+
+}
+
+#projects{
+	padding: 7%;
+}
+.projects-list-item{
+	position: relative;
+	display: inline-block;
+	width: 370px;
+	height: 300px;
+	margin: 1%;
+	padding: 2%;
+	overflow: hidden;
+	background-color: white;
+	opacity: 0.7;
+	transition: 0.2s;
+}
+.projects-list-item img{
+	position: absolute;
+	top:0;
+	left:0;
+	padding:0;
+	margin:0;
+	width: 100%;
+	height: 100%;
+	z-index: 0
+}
+.projects-list-item h4{
+	position: absolute;
+	color: #000;
+	top:0;
+	left:0;
+	width: 100%;
+	padding: 2%;
+	margin: 0;
+	background-color: rgba(255,255,255,0.4);
+	font-size: 20px;
+	font-weight: bold;
+}
+.projects-list-item p{
+	color: #000;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	margin: 0;
+	padding: 2%;
+	background-color: rgba(255,255,255,0.4);
+	font-size: 14px;
+	font-weight: normal;
+
+}
+.projects-list-item:hover{
+	opacity: 1;	
+}
