@@ -33,13 +33,20 @@ function jrSimpleBlog(){
 		templates, that themselves may contain more template tags
 		- we can load templates in templates in templates
 	*/
-	function buildTemplates(){
+	function buildTemplates(elToBuild, listElToBuild){
+
+		if(elToBuild === "" || elToBuild == null || elToBuild == undefined){
+			ourNodeToBuildOn = $("template");//All lists on DOM
+		} else {
+			ourNodeToBuildOn = elToBuild;
+		}
+
 		var count = -1;
-		$("body template").each(function( index ){
+		ourNodeToBuildOn.each(function( index ){
 			count++;
 		});
 		
-		$("body template").first().attr('link', function(){
+		ourNodeToBuildOn.first().attr('link', function(){
 			
 			var templateLink = "/templates/" + $(this).attr('link');
 			$.ajax({
@@ -58,10 +65,10 @@ function jrSimpleBlog(){
 				complete : function(info){
 					if(count > 0){
 						updateDOM();
-						buildTemplates();
+						buildTemplates(elToBuild);
 					} else {
 						//Next build our static content at a folder location
-						buildLists();//Only after all templates are loaded
+						buildLists(listElToBuild);//Only after all templates are loaded
 					}
 				}
 			});
@@ -274,8 +281,19 @@ function jrSimpleBlog(){
 		- limit - number of posts to show (default 5)
 			- number on each page is based off limit
 	*/
-	function buildLists(){
-		$("body list").each(function( index ){
+	function buildLists(elToBuild){
+
+		//Check to see if we are to build all the lists on the DOM
+		//or just the list element we pass.
+		if(elToBuild === "" || elToBuild == null || elToBuild == undefined){
+			ourNodeToBuildOn = $("list");//All lists on DOM
+		} else {
+			ourNodeToBuildOn = elToBuild;
+		}
+
+
+		ourNodeToBuildOn.empty();//Clear our the node(s)
+		ourNodeToBuildOn.each(function( index ){
 			var parentEl = $(this);
 			var category = parentEl.attr('category');
 			var limit = parentEl.attr('limit');
@@ -329,17 +347,18 @@ function jrSimpleBlog(){
 							}
 
 							var completeTemplate = interpolate(myTemplate)(postContainer[i]);
-							$(completeTemplate).insertAfter(parentEl);
+							$(completeTemplate).appendTo(parentEl);
 							updateDOM();
 						}
 					}
 
 					//Remove parentEl to clean up html
-					setTimeout(function(){ parentEl.replaceWith(""); },500);
+					//setTimeout(function(){ parentEl.replaceWith(""); },500);
 			    });
 			},
 			function( err ) {
-			  alert( "@ERROR - ", err );
+				console.error( "@ERROR - unable to build list. Please Check Category name.", err );
+				alert( "@ERROR - unable to build list. Please Check Category name.", err );
 			});
 		});	
 	};//End buildLists
@@ -347,105 +366,155 @@ function jrSimpleBlog(){
 
 
 
-function togglePost(){
-	$('#body').fadeToggle('slow');
-	$('#post').fadeToggle('slow');
+	function getPost(postUrl){
 
-}
+		var template = $('post').attr('template');
+
+		$.when(
+		 	getPostData([postUrl]),//must pass an array to deferred(so we don't have to setup 2 different functions to do the same thing for multiple posts)
+			getTemplate(template)
+		).then(function(results){
+			
+			var myTemplate = arguments[1][0].toString();//Make sure we have a string to avoid frag errors
+			var myPostData = arguments[0][0];
+			var postContainer = parseMd([myPostData]);//must pass array
+			var completeTemplate = interpolate(myTemplate)(postContainer[0]);
+			
+			$('post').empty();//clear all child nodes from post element
+			$(completeTemplate).appendTo($('post'));
+			updateDOM();
+			$('#post').fadeIn('slow');//#post here is for our css and fade control
+
+			window.location.hash = postUrl;//And lastly change our url
+		});
+
+	};
+
+	function getArchive(postUrl){
+
+
+		var template = $('archive').attr('template');
+		var limit = $('archive').attr('limit');//default limit
+		var catName = postUrl.split("/");
+
+		$.when( 
+				getTemplate( template )
+		).then(function(results) {
+			var theHtml = results.toString();//Get the html and toString to avoid frag errors
+			var archiveEl = $('archive');
+			archiveEl.empty();//Clear our node,
+			archiveEl.append(theHtml);//Append it to our dom element
+			
+			$('archive list').attr('category', catName[2]); //Change the archive <list category=""> attribute
+			buildTemplates($('archive template'), $('archive list'));//This will build any templates and then the lists
+			
+			$('#archive').fadeIn('slow');
+			window.location.hash = postUrl;//And lastly change our url
+
+		});
+		
+
+	};
 
 
 
 
-/*-----------------------------------
-	Helper Functions
 
 
 
--------------------------------------*/
-//To replace brackets with string
-//http://stackoverflow.com/questions/15502629/regex-for-mustache-style-double-braces/15502875
-/*
-	- recursive 
-	- pass the string like:
-		myString = "<h1>{title}</h1>";
-		myObject = {title: 'Hello World'};
-		var returnedString = interpolate(myString)(myObject)
-*/
-function interpolate(str) {
-    return function interpolate(o) {
-        return str.replace(/{([^{}]*)}/g, function (a, b) {
-            var r = o[b];
-            return typeof r === 'string' || typeof r === 'number' ? r : a;
-        });
-    }
-}
+
+
+
+	/*-----------------------------------
+		Helper Functions
+
+
+
+	-------------------------------------*/
+	//To replace brackets with string
+	//http://stackoverflow.com/questions/15502629/regex-for-mustache-style-double-braces/15502875
+	/*
+		- recursive 
+		- pass the string like:
+			myString = "<h1>{title}</h1>";
+			myObject = {title: 'Hello World'};
+			var returnedString = interpolate(myString)(myObject)
+	*/
+	function interpolate(str) {
+	    return function interpolate(o) {
+	        return str.replace(/{([^{}]*)}/g, function (a, b) {
+	            var r = o[b];
+	            return typeof r === 'string' || typeof r === 'number' ? r : a;
+	        });
+	    }
+	}
+
+
+	
+
+
+	/*----------------------------------
+	Direct User DOM Manipulation
+	- Once we load all templates and lists
+	we will call this:
+	-------------------------------------*/
+
+
+	function updateDOM(){
+
+		$('a').unbind('click'); //clear all click events so we don't fire multiple times
+
+		//Then attach a click event to each anchor tag
+		$('a').click(function(evt){
+			evt.preventDefault();
+			evt.stopPropagation();
+
+			anchorEl = $(this);
+			var postUrl = anchorEl.attr('href');
+
+			
+
+
+			if(postUrl === "/"){//Handle our close button
+
+				var tempHashCheck = window.location.hash;
+				if(tempHashCheck.search('categories') != -1){
+					$('#post').fadeOut('slow');
+					if($('#archive').css('display') === 'block'){
+						//Then an archive page is present underneath our post
+						//we need to grab it's info and update our url
+						window.location.hash = "/archive/" + $('#archive list').attr('category');
+						return;
+					}
+
+				} else if(tempHashCheck.search('archive') != -1){
+					$('#archive').fadeOut('slow');
+				}
+
+				window.location.hash = postUrl;
+			}else if(postUrl.search('archive') != -1){
+				getArchive(postUrl);//go get the archive instead
+			} else {
+				getPost(postUrl);
+			}	
+
+		});
+
+
+	};//End updateDOM
+
+
+
+	//Handle user refresh
+	if ($('#body').css('display') === 'block'){
+		window.location.hash = "/";
+	}
+
+
 
 
 //Get started:
-buildTemplates();
-
-
-/*----------------------------------
-Direct User DOM Manipulation
-- Once we load all templates and lists
-we will call this:
--------------------------------------*/
-
-
-function updateDOM(){
-
-$('a').unbind('click'); //clear all click events so we don't fire multiple times
-
-//Then attach a click event to each anchor tag
-$('a').click(function(evt){
-	evt.preventDefault();
-	evt.stopPropagation();
-
-	anchorEl = $(this);
-	var postUrl = anchorEl.attr('href');
-
-	if(postUrl === "/"){
-		window.location.hash = postUrl;
-		togglePost();
-		return;
-	}
-
-	var template = $('post').attr('template');
-	
-	
-	$.when(
-	 	getPostData([postUrl]),//must pass an array to deferred(so we don't have to setup 2 different functions to do the same thing for multiple posts)
-		getTemplate(template)
-	).then(function(results){
-
-		var myTemplate = arguments[1][0].toString();//Make sure we have a string to avoid frag errors
-		var myPostData = arguments[0][0];
-		var postContainer = parseMd([myPostData]);//must pass array
-
-		var completeTemplate = interpolate(myTemplate)(postContainer[0]);
-		$('post').empty();//clear all child nodes from post
-		$(completeTemplate).appendTo($('post'));
-		updateDOM();
-
-		togglePost();
-
-		//And lastly change our url
-		window.location.hash = postUrl;
-	});
-
-});
-
-
-};//End updateDOM
-
-
-
-
-
-
-
-
-
+	buildTemplates();
 
 
 };//End simple blog
