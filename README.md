@@ -5,7 +5,7 @@
 (tenative name, btw... if you have a better one, please comment)
 
 #### Simple Blogger is a jQuery based, static content generating, website template.
-#####It works much similar to any old website with the exception of DOM traversing magnificence!!! It turns your linked URL [so 2001] site into a smooth transitioning content rich masterpiece. All you do is set up your categories folder, plug in a few custom tags and you'll be laughing at frustrated freelance WordPress devs in no time.
+#####It works much similar to any old website with the exception of DOM traversing. Setup your categories folder, plug in a few custom tags and you'll be have a dynamicly generating online site.
 
 
 
